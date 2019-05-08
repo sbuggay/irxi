@@ -1,6 +1,5 @@
 import { Socket, SocketConstructorOpts } from "net";
 import { EventEmitter } from "events";
-import * as prompt from "prompt";
 
 interface ICommand {
 
@@ -51,8 +50,8 @@ class IRCClient extends EventEmitter {
         });
     }
 
+    // TODO: clean up this logic
     parseData(input: string, stripColors: boolean = false): IMessage | void {
-
         if (stripColors) {
             input = input.replace(/[\x02\x1f\x16\x0f]|\x03\d{0,2}(?:,\d{0,2})?/g, "");
         }
@@ -71,37 +70,42 @@ class IRCClient extends EventEmitter {
         if ((pos = input.indexOf(" :")) !== -1) {
             trailing = input.substr(pos + 2);
             input = input.substr(0, pos);
-            args = input.length != 0 ? input.split(" ") : [];
+            args.push(...(input.length != 0 ? input.split(" ") : []));
             args.push(trailing);
-            args = args.slice(0);
-        } else {
-            args = input.length != 0 ? input.split(" ") : [];
-            
+        }
+        // whats this for?
+        else {
+            args.push(...(input.length != 0 ? input.split(" ") : []));
         }
 
+        if (prefix) {
+            args = args.slice(1);
+        }
 
         return {
             prefix,
             command: args[0],
-            params: args.slice(2)
+            params: args.slice(1)
         }
     }
 
     handleMessage(message: IMessage) {
         console.log(message.command, message.params);
-        
+
         // Special case for PING respond with PONG
         // Should this be optional?
         if (message.command === "PING") {
+            this.send("PONG", message.params[0]);
+        }
 
+        if (message.command === "376") {
+            this.join_channel("#archlinux");
         }
     }
 
     send(cmd: string, message: string) {
         const command = `${cmd} ${message}\r\n`;
-
         console.log("[SEND]", command);
-
         this.socket.write(command);
     }
 
