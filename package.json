@@ -11,10 +11,12 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/blessed": "^0.1.11",
     "@types/node": "^11.13.6",
     "typescript": "^3.4.4"
   },
   "dependencies": {
+    "blessed": "^0.1.81",
     "prompt": "^1.0.0"
   }
 }
