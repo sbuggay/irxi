@@ -1,4 +1,4 @@
-import { Client } from "./core";
+import { Client, IMessage } from "./core";
 
 import * as blessed from "blessed";
 
@@ -11,7 +11,7 @@ function start() {
 
     screen.title = "irc";
 
-    const container = blessed.box({
+    const container = blessed.log({
         top: 0,
         left: 0,
         width: "100%",
@@ -28,11 +28,12 @@ function start() {
         }
     });
 
-    const prompt = blessed.prompt({
+    const input = blessed.textbox({
         top: "100%-1",
         left: 0,
         width: "100%",
         height: 1,
+        inputOnFocus: true,
         style: {
             fg: "white"
         }
@@ -43,15 +44,25 @@ function start() {
     });
 
     screen.append(container);
-    screen.append(prompt);
-    
+    screen.append(input);
+
     screen.render();
 
-    prompt.input("$", "idk", (err, value) => {
-        container.insertBottom(value);
+    input.focus();
+
+    client.on("message", (message: IMessage) => {
+        container.log(`${message.command} ${message.params}`);
         screen.render();
-        prompt.focus();
     });
+
+    input.key("enter", () => {
+        const text = input.getValue();
+        container.log(text);
+        input.clearValue();
+        input.focus();
+    });
+
+    client.connect();
 }
 
 start();
