@@ -1,4 +1,4 @@
-import { Client, IMessage } from "./core";
+import { Client, IMessage, getReplyName } from "./core";
 
 import * as blessed from "blessed";
 
@@ -16,7 +16,6 @@ function start() {
         left: 0,
         width: "100%",
         height: "100%-1",
-        content: "test",
         border: {
             type: 'line'
         },
@@ -51,18 +50,36 @@ function start() {
     input.focus();
 
     client.on("message", (message: IMessage) => {
-        container.log(`${message.command} ${message.params}`);
+        if (isNaN(parseInt(message.command))) {
+            // If our command is not a number...
+            switch (message.command) {
+                case "NOTICE":
+                    container.log(`=!= ${message.trailing}`);
+
+                    break;
+                case "PRIVMSG":
+                    container.log(`${message.params} ${message.trailing}`);
+                    break;
+            }
+        }
+        else {
+            container.log(`${getReplyName(parseInt(message.command))} ${message.trailing}`);
+        }
+
         screen.render();
     });
 
     input.key("enter", () => {
         const text = input.getValue();
+        client.privmsg("##devantesting", text);
         container.log(text);
         input.clearValue();
         input.focus();
     });
 
-    client.connect();
+    client.connect().then(() => {
+        client.join_channel("##devantesting");
+    });
 }
 
 start();
