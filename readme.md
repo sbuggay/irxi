@@ -1,3 +1,14 @@
+# [irc-proto]
+
+[projectname] is a full IRC client in TypeScript. The core client is written from the ground up only referencing the original spec. Right now there is only a console renderer (through blessed) but future plans include react-native for windows/mobile.
+
+### Features
+
+- Connecting
+- JOIN/PART channels
+- PRIVMSG
+- 
+
 https://tools.ietf.org/html/rfc1459
 
 
