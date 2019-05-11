@@ -31,13 +31,13 @@ export class Client extends EventEmitter {
     }
 
     ready() {
-        this.send("NICK", "pwnmonkey__");
-        this.send("USER", "pwnmonkey__ * * :pwnmonkey__");
+        this.send("NICK devantest");
+        this.send("USER devantest * *", "devantest");
     }
 
     processData(data: string) {
         this.buffer += data;
-        // Splitting on a \r\n is safe according to spec
+        // Splitting on a "\r\n" is safe according to spec
         const lines = this.buffer.split("\r\n");
         this.buffer = lines.pop() || "";
         lines.forEach(line => {
@@ -49,20 +49,20 @@ export class Client extends EventEmitter {
     }
 
     handleMessage(message: IMessage) {
-        // Special case for PING respond with PONG
+        // Special case for PING respond with PONG to stay connected
         // Should this be optional?
         if (message.command === "PING") {
-            this.send("PONG", message.params[0]);
+            this.send(`PONG ${message.params[0]}`);
         }
     }
 
-    send(cmd: string, message: string) {
-        const command = `${cmd} ${message}\r\n`;
+    send(cmd: string, trailing: string = "") {
+        const command = `${cmd} ${trailing ? (" :" + trailing) : ""}\r\n`;
         this.socket.write(command);
     }
 
     join_channel(channel: string) {
-        this.send("JOIN", channel);
+        this.send(`JOIN ${channel}`);
     }
 
     identify(username: string, password: string) {
