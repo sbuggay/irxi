@@ -31,8 +31,8 @@ export class Client extends EventEmitter {
     }
 
     ready() {
-        this.send("NICK devantest");
-        this.send("USER devantest * *", "devantest");
+        this.send("NICK devantest4");
+        this.send("USER devantest4 * *", "devantest4");
     }
 
     processData(data: string) {
@@ -61,8 +61,12 @@ export class Client extends EventEmitter {
         this.socket.write(command);
     }
 
-    join_channel(channel: string) {
+    join(channel: string) {
         this.send(`JOIN ${channel}`);
+    }
+
+    quit() {
+        this.send("QUIT");
     }
 
     identify(username: string, password: string) {
