@@ -59,18 +59,6 @@ export class Client extends EventEmitter {
         this.socket.write(command);
     }
 
-    quit() {
-        this.send("QUIT");
-    }
-
-    identify(username: string, password: string) {
-        this.send("PRIVMSG NickServ", `identify ${username} ${password}`);
-    }
-
-    privmsg(target: string, message: string) {
-        this.send(`PRIVMSG ${target}`, message);
-    }
-
     connect(host: string, port = 6667): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
             this.socket.connect(port, host, () => {
