@@ -6,27 +6,32 @@ import { timingSafeEqual } from "crypto";
 interface IChannel {
     name: string;
     names: string[];
+    log: string[];
 }
 
-class ClientWrapper {
+type Channels = {[key: string]: IChannel}
+
+export class ClientWrapper {
     client: Client;
     nick: string;
-    channels: IChannel[];
-    activeChannel: number;
+    channels: {};
+    activeChannel: string;
 
     constructor(nick: string) {
         this.client = new Client();
         this.nick = nick;
         this.channels = [];
-        this.activeChannel = 0;
+        this.activeChannel = "default";
+    }
+
+    // Try to send a message to the active channel/user
+    send(message: string) {
+
     }
 
     join(channel: string) {
         this.client.send(`JOIN ${channel}`);
-        this.channels.push({
-            name: channel,
-            names: []
-        });
+        
     }
 
     part(channel: string) {
