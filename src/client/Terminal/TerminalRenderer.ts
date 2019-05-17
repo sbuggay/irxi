@@ -1,6 +1,6 @@
-import { Client } from "../core";
+import { Client } from "../../core";
 import * as blessed from "blessed";
-import { hourMinuteTimestamp } from "../utility/main";
+import { hourMinuteTimestamp } from "../../utility/main";
 
 export class TerminalRenderer {
 

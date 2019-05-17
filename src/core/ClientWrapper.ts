@@ -44,4 +44,16 @@ export class ClientWrapper {
     part(channel: string) {
         this.client.send(`PART ${channel}`);
     }
+
+    quit() {
+        this.client.send("QUIT");
+    }
+
+    identify(username: string, password: string) {
+        this.client.send("PRIVMSG NickServ", `identify ${username} ${password}`);
+    }
+
+    privmsg(target: string, message: string) {
+        this.client.send(`PRIVMSG ${target}`, message);
+    }
 }

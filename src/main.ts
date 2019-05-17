@@ -2,7 +2,7 @@ import { Client, IMessage, getReplyName, EReplies } from "./core";
 
 import { ClientWrapper } from "./core/ClientWrapper";
 import { CommandHandler, isCommand, parseCommand } from "./core/CommandHandler";
-import { TerminalRenderer } from "./renderer/TerminalRenderer";
+import { TerminalRenderer } from "./client/Terminal/TerminalRenderer";
 
 
 const clientWrapper = new ClientWrapper("pwndonkey");
@@ -32,7 +32,7 @@ commandHandler.register("JOIN", (params) => {
 });
 
 commandHandler.register("QUIT", (params) => {
-    client.quit();
+    clientWrapper.quit();
     setTimeout(() => process.exit(0), 500);
 });
 
@@ -40,7 +40,7 @@ commandHandler.register("QUIT", (params) => {
 renderer.bottomBar.content = clientWrapper.nick;
 
 renderer.screen.key(["escape", "C-c"], () => {
-    client.quit();
+    clientWrapper.quit();
     setTimeout(() => process.exit(0), 500);
 });
 
