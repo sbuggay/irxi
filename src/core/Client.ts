@@ -6,6 +6,7 @@ export interface IMessage {
     command: string;
     params: string[];
     trailing: string;
+    full: string;
 }
 
 export class Client extends EventEmitter {
@@ -51,9 +52,17 @@ export class Client extends EventEmitter {
     handleMessage(message: IMessage) {
         // Special case for PING respond with PONG to stay connected
         // Should this be optional?
-        if (message.command === "PING") {
-            this.send(`PONG ${message.params[0]}`);
+        switch (message.command) {
+            case "PING":
+                this.send(`PONG ${message.params[0]}`);
+
+                break;
+            case "VERSION":
+                this.send(`PONG dirc 0.1.0`);
+
+                break;
         }
+
     }
 
     send(cmd: string, trailing: string = "") {
@@ -123,7 +132,8 @@ function parseData(input: string, stripColors: boolean = false): IMessage | void
         prefix,
         command: args[0],
         params: args.slice(1),
-        trailing
+        trailing,
+        full: input
     }
 }
 

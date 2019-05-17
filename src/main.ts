@@ -1,6 +1,8 @@
-import { Client, IMessage, getReplyName } from "./core";
+import { Client, IMessage, getReplyName, EReplies } from "./core";
 
 import * as blessed from "blessed";
+import { isCommand } from "./core/CommandParser";
+import { ClientWrapper } from "./core/ClientWrapper";
 
 function hourMinuteTimestamp(date: Date) {
     const hours = date.getHours().toString().padStart(2, "0");
@@ -16,6 +18,8 @@ class TerminalRenderer {
     messageLog: blessed.Widgets.Log;
     bottomBar: blessed.Widgets.TextElement;
     input: blessed.Widgets.TextboxElement;
+
+    onInput: Function;
 
     constructor(client: Client) {
         this.client = client;
@@ -58,6 +62,8 @@ class TerminalRenderer {
             }
         });
 
+        this.onInput = () => { };
+
         this.screen.append(this.topBar);
         this.screen.append(this.messageLog);
         this.screen.append(this.bottomBar);
@@ -69,10 +75,7 @@ class TerminalRenderer {
 
         this.input.key("enter", () => {
             const text = this.input.getValue();
-            client.privmsg("##devantesting", text);
-            this.log(text);
-            this.input.clearValue();
-            this.input.focus();
+            this.onInput(text);
         });
     }
 
@@ -90,16 +93,36 @@ class TerminalRenderer {
     }
 }
 
-const client = new Client();
+const clientWrapper = new ClientWrapper("pwndonkey");
+const client = clientWrapper.client;
 const renderer = new TerminalRenderer(client);
+
+renderer.bottomBar.content = clientWrapper.nick;
 
 renderer.screen.key(["escape", "C-c"], () => {
     client.quit();
     setTimeout(() => process.exit(0), 500);
 });
 
+renderer.onInput = (input: string) => {
+    // client.privmsg("##devantesting", input);
+
+    // Check if the input is a command, preceding with a /
+    if (isCommand(input)) {
+        renderer.log(`command ${input}`);
+    }
+    else {
+        renderer.log(`<${clientWrapper.nick}> ${input}`);
+
+    }
+
+    renderer.input.clearValue();
+    renderer.input.focus();
+}
+
 client.on("message", (message: IMessage) => {
-    if (isNaN(parseInt(message.command))) {
+    const command = parseInt(message.command) as EReplies;
+    if (isNaN(command)) {
         // If our command is not a number...
         switch (message.command) {
             case "NOTICE":
@@ -107,12 +130,20 @@ client.on("message", (message: IMessage) => {
 
                 break;
             case "PRIVMSG":
-                renderer.log(`${message.params} ${message.trailing}`);
+                const from = message.prefix.split("!")[0];
+                renderer.log(`${from} ${message.trailing}`);
                 break;
         }
     }
     else {
-        renderer.log(`${getReplyName(parseInt(message.command))} ${message.trailing}`);
+        switch (command) {
+            case EReplies.RPL_MOTD:
+                renderer.log(`! ${message.trailing}`);
+                break;
+            default:
+                renderer.log(`${getReplyName(parseInt(message.command))} ${message.trailing}`);
+                break;
+        }
     }
 
     renderer.render();
