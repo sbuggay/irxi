@@ -12,7 +12,7 @@ export function isCommand(input: string) {
 export function parseCommand(input: string): IClientCommand {
     // Take the first word, remove the /
     const parsedInput = input.split(" ");
-    const command = parsedInput[0];
+    const command = parsedInput[0].toLowerCase().slice(1);
     const params = parsedInput.slice(1);
     
     return {
@@ -29,18 +29,19 @@ export class CommandHandler {
     }
 
     call(key: string, params: string[]) {
+        key = key.toLowerCase();
         if (!this.commands[key]) {
-            throw new Error("No command")
+            return "No Command " + key;
         }
 
-        this.commands[key](params);
+        return this.commands[key](params);
     }
 
     register(key: string, cb: ICommandCallback) {
-        this.commands[key] = cb;
+        this.commands[key.toLowerCase()] = cb;
     }
 
     deregister(key: string) {
-        delete this.commands[key];
+        delete this.commands[key.toLowerCase()];
     }
 }
