@@ -11,6 +11,8 @@ export class TerminalRenderer {
     bottomBar: blessed.Widgets.TextElement;
     input: blessed.Widgets.TextboxElement;
 
+    onInput: Function;
+
     constructor(client: Client) {
         this.client = client;
         this.screen = blessed.screen({
@@ -52,6 +54,8 @@ export class TerminalRenderer {
             }
         });
 
+        this.onInput = () => { };
+
         this.screen.append(this.topBar);
         this.screen.append(this.messageLog);
         this.screen.append(this.bottomBar);
@@ -61,7 +65,10 @@ export class TerminalRenderer {
 
         this.input.focus();
 
-        
+        this.input.key("enter", () => {
+            const text = this.input.getValue();
+            this.onInput(text);
+        });
     }
 
     log(message: string, timestamp: boolean = true) {

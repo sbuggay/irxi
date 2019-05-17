@@ -10,30 +10,21 @@ export interface IMessage {
 }
 
 export class Client extends EventEmitter {
-    public host: string;
-    public port: number;
     private socket: Socket;
     private connected: boolean;
     private buffer: string;
 
-    constructor(host: string = "irc.freenode.net", port: number = 6667, options?: SocketConstructorOpts) {
+    constructor(options?: SocketConstructorOpts) {
         super();
-        this.host = host;
-        this.port = port;
         this.socket = new Socket(options);
         this.connected = false;
         this.buffer = "";
 
-        this.socket.on("ready", this.ready.bind(this));
+        // this.socket.on("ready", this.ready.bind(this));
         this.socket.on("data", this.processData.bind(this));
         this.socket.on("close", () => { });
 
         this.on("message", this.handleMessage.bind(this));
-    }
-
-    ready() {
-        this.send("NICK devantest4");
-        this.send("USER devantest4 * *", "devantest4");
     }
 
     processData(data: string) {
@@ -55,11 +46,9 @@ export class Client extends EventEmitter {
         switch (message.command) {
             case "PING":
                 this.send(`PONG ${message.params[0]}`);
-
                 break;
             case "VERSION":
-                this.send(`PONG dirc 0.1.0`);
-
+                this.send(`VERSION dirc 0.1.0`);
                 break;
         }
 
@@ -68,10 +57,6 @@ export class Client extends EventEmitter {
     send(cmd: string, trailing: string = "") {
         const command = `${cmd} ${trailing ? (" :" + trailing) : ""}\r\n`;
         this.socket.write(command);
-    }
-
-    join(channel: string) {
-        this.send(`JOIN ${channel}`);
     }
 
     quit() {
@@ -86,9 +71,9 @@ export class Client extends EventEmitter {
         this.send(`PRIVMSG ${target}`, message);
     }
 
-    connect(): Promise<boolean> {
+    connect(host: string, port = 6667): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
-            this.socket.connect(this.port, this.host, () => {
+            this.socket.connect(port, host, () => {
                 this.emit("connected");
                 resolve(true);
             });
@@ -137,5 +122,4 @@ function parseData(input: string, stripColors: boolean = false): IMessage | void
     }
 }
 
-const ircClient = new Client();
-ircClient.connect();
+

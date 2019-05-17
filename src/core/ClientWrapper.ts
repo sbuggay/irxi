@@ -9,7 +9,7 @@ interface IChannel {
     log: string[];
 }
 
-type Channels = {[key: string]: IChannel}
+type Channels = { [key: string]: IChannel }
 
 export class ClientWrapper {
     client: Client;
@@ -25,13 +25,20 @@ export class ClientWrapper {
     }
 
     // Try to send a message to the active channel/user
-    send(message: string) {
+    connect(host: string, port = 6667) {
+        return this.client.connect(host, port);
+    }
 
+    nickname(nick: string) {
+        this.client.send(`NICK ${nick}`);
+    }
+
+    user(username: string, realname: string) {
+        this.client.send(`USER ${username} 0 * ${realname}`);
     }
 
     join(channel: string) {
         this.client.send(`JOIN ${channel}`);
-        
     }
 
     part(channel: string) {
