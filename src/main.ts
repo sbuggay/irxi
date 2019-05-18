@@ -5,12 +5,24 @@ import { TerminalRenderer } from "./client/Terminal/TerminalRenderer";
 import { IMessage } from "./core/IRCSocket";
 import { EReplies, getReplyName } from "./core/EReplies";
 
+const packageJson = require("../package.json");
+
+import * as commander from "commander";
+
+
+commander
+    .option('-n, --nick', 'output extra debugging')
+    .option('-d, --debug', 'output extra debugging')
+    .version(packageJson.version);
+
+    commander.parse(process.argv);
+
+console.log(commander.debug);
 
 const ircClient = new IRCClient("pwndonkey");
 const client = ircClient.client;
 const renderer = new TerminalRenderer();
 const commandHandler = new CommandHandler();
-
 
 // Register client commands
 commandHandler.register("CONNECT", (params) => {
@@ -72,6 +84,11 @@ renderer.onInput = (input: string) => {
 }
 
 client.on("message", (message: IMessage) => {
+
+    if (commander.debug) {
+        renderer.log(message.full);
+    }
+
     const command = parseInt(message.command) as EReplies;
     if (isNaN(command)) {
         // If our command is not a number...
@@ -91,7 +108,7 @@ client.on("message", (message: IMessage) => {
             case EReplies.RPL_MOTDSTART:
             case EReplies.RPL_MOTD:
             case EReplies.RPL_ENDOFMOTD:
-                renderer.log(`! ${message.trailing}`);
+                renderer.log(`{green-fg}!{/} ${message.trailing}`);
                 break;
             default:
                 renderer.log(`${getReplyName(parseInt(message.command))} ${message.trailing}`);
