@@ -1,13 +1,14 @@
-import { Client, IMessage, getReplyName, EReplies } from "./core";
 
-import { ClientWrapper } from "./core/ClientWrapper";
+import { IRCClient } from "./core/IRCClient";
 import { CommandHandler, isCommand, parseCommand } from "./core/CommandHandler";
 import { TerminalRenderer } from "./client/Terminal/TerminalRenderer";
+import { IMessage } from "./core/IRCSocket";
+import { EReplies, getReplyName } from "./core/EReplies";
 
 
-const clientWrapper = new ClientWrapper("pwndonkey");
-const client = clientWrapper.client;
-const renderer = new TerminalRenderer(client);
+const ircClient = new IRCClient("pwndonkey");
+const client = ircClient.client;
+const renderer = new TerminalRenderer();
 const commandHandler = new CommandHandler();
 
 
@@ -21,26 +22,32 @@ commandHandler.register("CONNECT", (params) => {
 
     renderer.log(`connecting to ${params[0]}`);
 
-    clientWrapper.connect(params[0]).then(() => {
-        clientWrapper.nickname(clientWrapper.nick);
-        clientWrapper.user(clientWrapper.nick, "devan");
+    ircClient.connect(params[0]).then(() => {
+        ircClient.nickname(ircClient.nick);
+        ircClient.user(ircClient.nick, "devan");
+        renderer.statusBar.updateNickname(ircClient.nick);
+        renderer.statusBar.updateServer(params[0]);
+        renderer.screen.render();
     });
 });
 
 commandHandler.register("JOIN", (params) => {
-    return "join";
+    // TODO: Does join allow multiple channels?
+    if (params.length != 1) {
+        renderer.log("/JOIN not enough params", false);
+        return;
+    }
+
+    ircClient.join(params[0]);
 });
 
 commandHandler.register("QUIT", (params) => {
-    clientWrapper.quit();
+    ircClient.quit();
     setTimeout(() => process.exit(0), 500);
 });
 
-
-renderer.bottomBar.content = clientWrapper.nick;
-
 renderer.screen.key(["escape", "C-c"], () => {
-    clientWrapper.quit();
+    ircClient.quit();
     setTimeout(() => process.exit(0), 500);
 });
 
@@ -56,7 +63,7 @@ renderer.onInput = (input: string) => {
         renderer.log(ret ? ret : "");
     }
     else {
-        renderer.log(`<${clientWrapper.nick}> ${input}`);
+        renderer.log(`<${ircClient.nick}> ${input}`);
 
     }
 
@@ -75,13 +82,15 @@ client.on("message", (message: IMessage) => {
                 break;
             case "PRIVMSG":
                 const from = message.prefix.split("!")[0];
-                renderer.log(`${from} ${message.trailing}`);
+                renderer.log(`<${from}> ${message.trailing}`);
                 break;
         }
     }
     else {
         switch (command) {
+            case EReplies.RPL_MOTDSTART:
             case EReplies.RPL_MOTD:
+            case EReplies.RPL_ENDOFMOTD:
                 renderer.log(`! ${message.trailing}`);
                 break;
             default:
