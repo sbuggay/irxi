@@ -11,13 +11,11 @@ export interface IMessage {
 
 export class IRCSocket extends EventEmitter {
     private socket: Socket;
-    private connected: boolean;
     private buffer: string;
 
     constructor(options?: SocketConstructorOpts) {
         super();
         this.socket = new Socket(options);
-        this.connected = false;
         this.buffer = "";
 
         // this.socket.on("ready", this.ready.bind(this));
