@@ -9,7 +9,7 @@ export interface IMessage {
     full: string;
 }
 
-export class Client extends EventEmitter {
+export class IRCSocket extends EventEmitter {
     private socket: Socket;
     private connected: boolean;
     private buffer: string;
@@ -51,7 +51,6 @@ export class Client extends EventEmitter {
                 this.send(`VERSION dirc 0.1.0`);
                 break;
         }
-
     }
 
     send(cmd: string, trailing: string = "") {

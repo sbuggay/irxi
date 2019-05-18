@@ -1,7 +1,5 @@
-import { Client } from "./Client";
-import { timingSafeEqual } from "crypto";
+import { IRCSocket } from "./IRCSocket";
 
-// TODO: rename this
 
 interface IChannel {
     name: string;
@@ -11,14 +9,18 @@ interface IChannel {
 
 type Channels = { [key: string]: IChannel }
 
-export class ClientWrapper {
-    client: Client;
+export class IRCClient {
+    client: IRCSocket;
+    connected: boolean;
+    host: string | null;
     nick: string;
     channels: {};
     activeChannel: string;
 
     constructor(nick: string) {
-        this.client = new Client();
+        this.client = new IRCSocket();
+        this.connected = false;
+        this.host = null;
         this.nick = nick;
         this.channels = [];
         this.activeChannel = "default";
@@ -26,7 +28,10 @@ export class ClientWrapper {
 
     // Try to send a message to the active channel/user
     connect(host: string, port = 6667) {
-        return this.client.connect(host, port);
+        this.host = host;
+        return this.client.connect(host, port).then(() => {
+            this.connected = true;
+        });
     }
 
     nickname(nick: string) {
