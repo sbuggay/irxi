@@ -4,6 +4,7 @@ import { hourMinuteTimestamp } from "../../utility/time";
 import { StatusBar } from "./StatusBar";
 import { EReplies, getReplyName } from "../../core/EReplies";
 import { IMessage, IRCSocket } from "../../core/IRCSocket";
+import { IRCClient } from "../../core/IRCClient";
 
 
 const packageJson = require("../../../package.json");
@@ -111,12 +112,12 @@ export class TerminalRenderer {
         this.currentLog().log(`${hourMinuteTimestamp(new Date())} ${message}`);
     }
 
-    registerSocket(ircSocket: IRCSocket) {
-        ircSocket.on("message", (message: IMessage) => {
+    registerClient(ircClient: IRCClient) {
+        ircClient.on("message", (message: IMessage) => {
 
-            // if (commander.debug) {
-            //     this.log(`{bold}{magenta-fg}DEBUG < ${message.full}{/}`);
-            // }
+            if (process.env.DEBUG) {
+                this.log(`{bold}{magenta-fg}DEBUG < ${message.full}{/}`);
+            }
 
             const command = parseInt(message.command) as EReplies;
             if (isNaN(command)) {
@@ -129,6 +130,9 @@ export class TerminalRenderer {
                     case "PRIVMSG":
                         const from = message.prefix.split("!")[0];
                         this.log(`<${from}> ${message.trailing}`);
+                        break;
+                    default:
+                        
                         break;
                 }
             }

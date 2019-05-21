@@ -18,6 +18,10 @@ commander
 
 commander.parse(process.argv);
 
+if (commander.debug) {
+    process.env.DEBUG = "true";
+}
+
 const nick = commander.nick || userInfo().username;
 
 // Set up client, 
@@ -25,7 +29,7 @@ const ircClient = new IRCClient(nick);
 const renderer = new TerminalRenderer();
 const commandHandler = new CommandHandler();
 
-renderer.registerSocket(ircClient.ircSocket);
+renderer.registerClient(ircClient);
 
 if (commander.server) {
     ircClient.connect(commander.server).then(() => {
