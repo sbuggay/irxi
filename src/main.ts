@@ -5,24 +5,53 @@ import { TerminalRenderer } from "./client/Terminal/TerminalRenderer";
 import { IMessage } from "./core/IRCSocket";
 import { EReplies, getReplyName } from "./core/EReplies";
 
+import { userInfo } from "os";
+
 const packageJson = require("../package.json");
 
 import * as commander from "commander";
 
 
 commander
-    .option('-n, --nick', 'output extra debugging')
-    .option('-d, --debug', 'output extra debugging')
+    .option("-s, --server <server>", "default server")
+    .option("-c, --channel <channel>", "join channels, can be comma separated")
+    .option("-n, --nick <nick>", "nickname")
+    .option("-d, --debug", "output extra debugging")
     .version(packageJson.version);
 
-    commander.parse(process.argv);
+commander.parse(process.argv);
 
-console.log(commander.debug);
+const nick = commander.nick || userInfo().username;
 
-const ircClient = new IRCClient("pwndonkey");
-const client = ircClient.client;
+// Set up client, 
+const ircClient = new IRCClient(nick);
 const renderer = new TerminalRenderer();
 const commandHandler = new CommandHandler();
+
+renderer.registerSocket(ircClient.ircSocket);
+
+if (commander.server) {
+    ircClient.connect(commander.server).then(() => {
+        ircClient.nickname(ircClient.nick);
+        ircClient.user(ircClient.nick, "devan");
+        renderer.statusBar.updateNickname(ircClient.nick);
+        renderer.statusBar.updateServer(commander.server);
+
+        // If there were specified channels to connect to, do them now.
+        if (commander.channel) {
+            const channels: string[] = commander.channel.split(",");
+            channels.forEach(ch => {
+                ircClient.join(ch);
+            });
+        }
+
+        renderer.screen.render();
+    });
+}
+
+renderer.statusBar.updateNickname(nick);
+
+renderer.render();
 
 // Register client commands
 commandHandler.register("CONNECT", (params) => {
@@ -34,6 +63,7 @@ commandHandler.register("CONNECT", (params) => {
 
     renderer.log(`connecting to ${params[0]}`);
 
+    // TODO: Disconnect from previous connection first
     ircClient.connect(params[0]).then(() => {
         ircClient.nickname(ircClient.nick);
         ircClient.user(ircClient.nick, "devan");
@@ -46,7 +76,7 @@ commandHandler.register("CONNECT", (params) => {
 commandHandler.register("JOIN", (params) => {
     // TODO: Does join allow multiple channels?
     if (params.length != 1) {
-        renderer.log("/JOIN not enough params", false);
+        renderer.log("/JOIN not enough params");
         return;
     }
 
@@ -63,6 +93,7 @@ renderer.screen.key(["escape", "C-c"], () => {
     setTimeout(() => process.exit(0), 500);
 });
 
+// TODO: move this logic somewhere
 renderer.onInput = (input: string) => {
     // client.privmsg("##devantesting", input);
 
@@ -76,45 +107,8 @@ renderer.onInput = (input: string) => {
     }
     else {
         renderer.log(`<${ircClient.nick}> ${input}`);
-
     }
 
     renderer.input.clearValue();
     renderer.input.focus();
-}
-
-client.on("message", (message: IMessage) => {
-
-    if (commander.debug) {
-        renderer.log(message.full);
-    }
-
-    const command = parseInt(message.command) as EReplies;
-    if (isNaN(command)) {
-        // If our command is not a number...
-        switch (message.command) {
-            case "NOTICE":
-                renderer.log(`=!= ${message.trailing}`);
-
-                break;
-            case "PRIVMSG":
-                const from = message.prefix.split("!")[0];
-                renderer.log(`<${from}> ${message.trailing}`);
-                break;
-        }
-    }
-    else {
-        switch (command) {
-            case EReplies.RPL_MOTDSTART:
-            case EReplies.RPL_MOTD:
-            case EReplies.RPL_ENDOFMOTD:
-                renderer.log(`{green-fg}!{/} ${message.trailing}`);
-                break;
-            default:
-                renderer.log(`${getReplyName(parseInt(message.command))} ${message.trailing}`);
-                break;
-        }
-    }
-
-    renderer.render();
-});
+}   

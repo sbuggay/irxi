@@ -1,64 +1,73 @@
-import { IRCSocket } from "./IRCSocket";
+import { IRCSocket, IMessage } from "./IRCSocket";
 
 
 interface IChannel {
     name: string;
     names: string[];
-    log: string[];
 }
 
 type Channels = { [key: string]: IChannel }
 
 export class IRCClient {
-    client: IRCSocket;
+    ircSocket: IRCSocket;
     connected: boolean;
     host: string | null;
     nick: string;
-    channels: {};
-    activeChannel: string;
+
+    target: string;
 
     constructor(nick: string) {
-        this.client = new IRCSocket();
+        this.ircSocket = new IRCSocket();
         this.connected = false;
         this.host = null;
         this.nick = nick;
-        this.channels = [];
-        this.activeChannel = "default";
+
+
+        this.target = "default"; // TODO: check if this is a valid channel name? I think not.
+
+        this.ircSocket.on("message", this.handleMessage.bind(this));
+    }
+
+    // The client needs to handle some messages, channel join/quit etc
+    handleMessage(message: IMessage) {
+        switch(message.command) {
+
+        }
     }
 
     // Try to send a message to the active channel/user
     connect(host: string, port = 6667) {
         this.host = host;
-        return this.client.connect(host, port).then(() => {
+        return this.ircSocket.connect(host, port).then(() => {
             this.connected = true;
         });
     }
 
     nickname(nick: string) {
-        this.client.send(`NICK ${nick}`);
+        this.ircSocket.send(`NICK ${nick}`);
     }
 
     user(username: string, realname: string) {
-        this.client.send(`USER ${username} 0 * ${realname}`);
+        this.ircSocket.send(`USER ${username} 0 * ${realname}`);
     }
 
     join(channel: string) {
-        this.client.send(`JOIN ${channel}`);
+        this.ircSocket.send(`JOIN ${channel}`);
     }
 
     part(channel: string) {
-        this.client.send(`PART ${channel}`);
+        this.ircSocket.send(`PART ${channel}`);
     }
 
     quit() {
-        this.client.send("QUIT");
+        this.ircSocket.send("QUIT");
     }
 
     identify(username: string, password: string) {
-        this.client.send("PRIVMSG NickServ", `identify ${username} ${password}`);
+        this.ircSocket.send("PRIVMSG NickServ", `identify ${username} ${password}`);
     }
 
     privmsg(target: string, message: string) {
-        this.client.send(`PRIVMSG ${target}`, message);
+        this.ircSocket.send(`PRIVMSG ${target}`, message);
     }
 }

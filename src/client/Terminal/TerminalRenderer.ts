@@ -2,12 +2,48 @@
 import * as blessed from "blessed";
 import { hourMinuteTimestamp } from "../../utility/main";
 import { StatusBar } from "./StatusBar";
+import { EReplies, getReplyName } from "../../core/EReplies";
+import { IMessage, IRCSocket } from "../../core/IRCSocket";
+
+export const DEFAULT_LOG = "DEFAULT_LOG";
+
+const bannerOptions = {
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: 1,
+    bg: "blue",
+};
+
+const messageLogOptions = {
+    top: 1,
+    left: 0,
+    width: "100%",
+    height: "100%-3",
+    tags: true,
+    mouse: true,
+    keys: true
+};
+
+const inputOptions = {
+    top: "100%-1",
+    left: 0,
+    width: "100%",
+    height: 1,
+    inputOnFocus: true,
+    style: {
+        fg: "white"
+    }
+};
 
 export class TerminalRenderer {
 
     screen: blessed.Widgets.Screen;
-    topBar: blessed.Widgets.TextElement;
-    messageLog: blessed.Widgets.Log;
+    banner: blessed.Widgets.TextElement;
+
+    activeLog: string;
+    messageLogs: { [key: string]: blessed.Widgets.Log };
+
     statusBar: StatusBar;
     input: blessed.Widgets.TextboxElement;
 
@@ -17,44 +53,22 @@ export class TerminalRenderer {
         this.screen = blessed.screen({
             smartCSR: true
         });
+
+        this.activeLog = DEFAULT_LOG;
+
+        this.messageLogs = {};
+
         this.screen.title = "irc";
 
-        this.topBar = blessed.text({
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: 1,
-            bg: "blue",
-        });
-
-        this.messageLog = blessed.log({
-            top: 1,
-            left: 0,
-            width: "100%",
-            height: "100%-3",
-            tags: true,
-            mouse: true,
-            keys: true
-        });
-
-
-        this.input = blessed.textbox({
-            top: "100%-1",
-            left: 0,
-            width: "100%",
-            height: 1,
-            inputOnFocus: true,
-            style: {
-                fg: "white"
-            }
-        });
-
+        this.banner = blessed.text(bannerOptions);
+        this.messageLogs[this.activeLog] = blessed.log(messageLogOptions);
         this.statusBar = new StatusBar();
+        this.input = blessed.textbox(inputOptions);
 
         this.onInput = () => { };
 
-        this.screen.append(this.topBar);
-        this.screen.append(this.messageLog);
+        this.screen.append(this.banner);
+        this.screen.append(this.messageLogs[this.activeLog]);
         this.screen.append(this.statusBar.bar);
         this.screen.append(this.input);
 
@@ -68,15 +82,66 @@ export class TerminalRenderer {
         });
     }
 
+    changeLog(log: string = DEFAULT_LOG) {
+        this.activeLog = log;
+    }
 
+    currentLog() {
+        return this.messageLogs[this.activeLog];
+    }
 
-    log(message: string, timestamp: boolean = true) {
+    log(message: string, log = DEFAULT_LOG, timestamp: boolean = true) {
+        const logElem = this.messageLogs[log];
+
+        // If there is no where for it to go, parse the message and create a new log.
+        if (!logElem) {
+            this.log(`creating noew log ${logElem}`);
+        }
+
         if (!timestamp) {
-            this.messageLog.log(message);
+            this.log(message);
             return;
         }
 
-        this.messageLog.log(`${hourMinuteTimestamp(new Date())} ${message}`);
+        this.currentLog().log(`${hourMinuteTimestamp(new Date())} ${message}`);
+    }
+
+    registerSocket(ircSocket: IRCSocket) {
+        ircSocket.on("message", (message: IMessage) => {
+
+            // if (commander.debug) {
+            //     this.log(`{bold}{magenta-fg}DEBUG < ${message.full}{/}`);
+            // }
+
+            const command = parseInt(message.command) as EReplies;
+            if (isNaN(command)) {
+                // If our command is not a number...
+                switch (message.command) {
+                    case "NOTICE":
+                        this.log(`=!= ${message.trailing}`);
+
+                        break;
+                    case "PRIVMSG":
+                        const from = message.prefix.split("!")[0];
+                        this.log(`<${from}> ${message.trailing}`);
+                        break;
+                }
+            }
+            else {
+                switch (command) {
+                    case EReplies.RPL_MOTDSTART:
+                    case EReplies.RPL_MOTD:
+                    case EReplies.RPL_ENDOFMOTD:
+                        this.log(`{green-fg}!{/} ${message.trailing}`);
+                        break;
+                    default:
+                        this.log(`${getReplyName(parseInt(message.command))} ${message.trailing}`);
+                        break;
+                }
+            }
+
+            this.render();
+        });
     }
 
     render() {
