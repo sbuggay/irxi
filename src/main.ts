@@ -2,9 +2,6 @@
 import { IRCClient } from "./core/IRCClient";
 import { CommandHandler, isCommand, parseCommand } from "./core/CommandHandler";
 import { TerminalRenderer } from "./client/Terminal/TerminalRenderer";
-import { IMessage } from "./core/IRCSocket";
-import { EReplies, getReplyName } from "./core/EReplies";
-
 import { userInfo } from "os";
 
 const packageJson = require("../package.json");

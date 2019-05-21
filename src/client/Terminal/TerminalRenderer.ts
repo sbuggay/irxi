@@ -1,9 +1,12 @@
 
 import * as blessed from "blessed";
-import { hourMinuteTimestamp } from "../../utility/main";
+import { hourMinuteTimestamp } from "../../utility/time";
 import { StatusBar } from "./StatusBar";
 import { EReplies, getReplyName } from "../../core/EReplies";
 import { IMessage, IRCSocket } from "../../core/IRCSocket";
+
+
+const packageJson = require("../../../package.json");
 
 export const DEFAULT_LOG = "DEFAULT_LOG";
 
@@ -12,7 +15,7 @@ const bannerOptions = {
     left: 0,
     width: "100%",
     height: 1,
-    bg: "blue",
+    bg: "blue"
 };
 
 const messageLogOptions = {
@@ -64,6 +67,8 @@ export class TerminalRenderer {
         this.messageLogs[this.activeLog] = blessed.log(messageLogOptions);
         this.statusBar = new StatusBar();
         this.input = blessed.textbox(inputOptions);
+
+        this.banner.content = ` ${packageJson.name}@${packageJson.version}`
 
         this.onInput = () => { };
 
