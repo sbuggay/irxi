@@ -38,15 +38,13 @@ export class IRCSocket extends EventEmitter {
         });
     }
 
+    // Low level socket message handling for PING etc.
     handleMessage(message: IMessage) {
         // Special case for PING respond with PONG to stay connected
         // Should this be optional?
         switch (message.command) {
             case "PING":
                 this.send(`PONG ${message.params[0]}`);
-                break;
-            case "VERSION":
-                this.send(`VERSION dirc 0.1.0`);
                 break;
         }
     }
@@ -85,8 +83,8 @@ function parseData(input: string, stripColors: boolean = false): IMessage | void
     /* handle any potential trailing argument, which may have spaces in it */
     if ((pos = input.indexOf(" :")) !== -1) {
         trailing = input.substr(pos + 2);
-        input = input.substr(0, pos);
-        args.push(...(input.length != 0 ? input.split(" ") : []));
+        const pre = input.substr(0, pos);
+        args.push(...(input.length != 0 ? pre.split(" ") : []));
         args.push(trailing);
     }
     // whats this for?
