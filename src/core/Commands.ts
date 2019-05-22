@@ -47,6 +47,10 @@ export function registerCommands(commandHandler: CommandHandler, ircClient: IRCC
     
         ircClient.join(params[0]);
     });
+
+    commandHandler.register("SEND", (params) => {
+        ircClient._socketSend(params.join(" "));
+    });
     
     commandHandler.register("QUIT", (params) => {
         ircClient.quit();

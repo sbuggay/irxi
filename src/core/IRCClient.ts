@@ -1,6 +1,8 @@
 import { IRCSocket, IMessage } from "./IRCSocket";
 import { EventEmitter } from "events";
 import { EReplies, getReplyName } from "./EReplies";
+import { isCommand, parseCommand, CommandHandler } from "./CommandHandler";
+import { registerCommands } from "./Commands";
 
 
 export const MESSAGE = Symbol("MESSAGE");
@@ -32,6 +34,7 @@ export class IRCClient extends EventEmitter {
     ircSocket: IRCSocket;
     status: IStatus;
     channels: Channels;
+    commandHandler: CommandHandler;
 
     constructor() {
         super();
@@ -43,6 +46,10 @@ export class IRCClient extends EventEmitter {
             nick: "",
             target: DEFAULT_TARGET
         }
+
+        this.commandHandler = new CommandHandler();
+
+        registerCommands(this.commandHandler, this);
 
         this.channels = {};
 
@@ -97,6 +104,24 @@ export class IRCClient extends EventEmitter {
         }
     }
 
+    submit(input: string) {
+        // Check if the input is a command, preceding with a /
+        if (isCommand(input)) {
+            const command = parseCommand(input);
+            const ret = this.commandHandler.call(command.command, command.params);
+            this.emitMessage(ret ? ret : "");
+        }
+        else {
+            if (this.status.target !== DEFAULT_TARGET) {
+                this.privmsg(input);
+                this.emitMessage(`<${this.status.nick}> ${input}`, this.status.target);
+            }
+            else {
+                this.emitMessage("Not connected")
+            }
+        }
+    }
+
     emitMessage(text: string, channel?: string, notice?: boolean) {
         const event: IEvent = {
             text,
@@ -112,7 +137,11 @@ export class IRCClient extends EventEmitter {
     }
 
     _socketSend(message: string, params?: string) {
-        this.emitMessage(`{magenta-fg}DEBUG > ${message} ${params}{/}`);
+
+        if (process.env.DEBUG) {
+            this.emitMessage(`{magenta-fg}DEBUG > ${message} ${params}{/}`);
+        }
+        
         this.ircSocket.send(message, params);
     }
 

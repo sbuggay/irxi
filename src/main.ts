@@ -27,9 +27,6 @@ const nick = commander.nick || userInfo().username;
 // Set up client, 
 const ircClient = new IRCClient();
 const renderer = new TerminalRenderer();
-const commandHandler = new CommandHandler();
-
-registerCommands(commandHandler, ircClient);
 
 if (commander.server) {
     ircClient.connect(commander.server).then(() => {
@@ -70,16 +67,7 @@ renderer.onInput = (input: string) => {
 
     if (!input) return;
 
-    // Check if the input is a command, preceding with a /
-    if (isCommand(input)) {
-        const command = parseCommand(input);
-        const ret = commandHandler.call(command.command, command.params);
-        renderer.log(ret ? ret : "");
-    }
-    else {
-        renderer.log(`<${ircClient.status.nick}> ${input}`);
-        // ircClient.submit(input);
-    }
+    ircClient.submit(input);
 
     renderer.input.clearValue();
     renderer.input.focus();
