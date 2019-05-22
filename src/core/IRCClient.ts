@@ -2,15 +2,24 @@ import { IRCSocket, IMessage } from "./IRCSocket";
 import { EventEmitter } from "events";
 import { EReplies, getReplyName } from "./EReplies";
 
-const DEFAULT_TARGET = "DEFAULT_TARGET";
 
-interface IEvent {
+export const MESSAGE = Symbol("MESSAGE");
+export const STATUS_UPDATE = Symbol("STATUS_UPDATE");
+export const DEFAULT_TARGET = "DEFAULT_TARGET";
+
+export interface IEvent {
     text: string;
     channel?: string; // Which channel to target?
     notice?: boolean; // Should it appear everywhere?
 }
 
-interface IChannel {
+export interface IStatus {
+    connected: boolean;
+    host: string;
+    nick: string;
+}
+
+export interface IChannel {
     name: string;
     names: string[];
 }
@@ -19,19 +28,19 @@ type Channels = { [key: string]: IChannel }
 
 export class IRCClient extends EventEmitter {
     ircSocket: IRCSocket;
-    connected: boolean;
-    host: string | null;
-    nick: string;
-
+    status: IStatus;
     channels: Channels;
     target: string;
 
     constructor(nick: string) {
         super();
         this.ircSocket = new IRCSocket();
-        this.connected = false;
-        this.host = null;
-        this.nick = nick;
+
+        this.status = {
+            connected: false,
+            host: "",
+            nick: ""
+        }
 
         this.channels = {};
 
@@ -47,12 +56,11 @@ export class IRCClient extends EventEmitter {
             // If our command is not a number...
             switch (message.command) {
                 case "NOTICE":
-                    this.log(`=!= ${message.trailing}`);
-
+                    this.emitMessage(`{yellow-fg}{bold}!!!{/} ${message.trailing}`);
                     break;
                 case "PRIVMSG":
                     const from = message.prefix.split("!")[0];
-                    this.log(`<${from}> ${message.trailing}`);
+                    this.emitMessage(`<${from}> ${message.trailing}`);
                     break;
                 case "JOIN":
                     break;
@@ -71,59 +79,72 @@ export class IRCClient extends EventEmitter {
                 case EReplies.RPL_MOTDSTART:
                 case EReplies.RPL_MOTD:
                 case EReplies.RPL_ENDOFMOTD:
-                    this.log(`{green-fg}!{/} ${message.trailing}`);
+                    this.emitMessage(`{green-fg}!{/} ${message.trailing}`);
                     break;
                 default:
-                    this.log(`${getReplyName(parsedCommand)} ${message.trailing}`);
+                    this.emitMessage(`${getReplyName(parsedCommand)} ${message.trailing}`);
                     break;
             }
         }
     }
 
-    emitEvent()
+    emitMessage(text: string, channel?: string, notice?: boolean) {
+        const event: IEvent = {
+            text,
+            channel,
+            notice
+        }
 
-    submit(input: string) {
+        this.emit(MESSAGE, event);
+    }
 
+    emitStatus() {
+        this.emit(STATUS_UPDATE, this.status);
+    }
+
+    _socketSend(message: string, params?: string) {
+        this.emitMessage(`{magenta-fg}DEBUG > ${message} ${params}{/}`);
+        this.ircSocket.send(message, params);
     }
 
     // Try to send a message to the active channel/user
     connect(host: string, port = 6667) {
-        this.host = host;
+        this.status.host = host;
         return this.ircSocket.connect(host, port).then(() => {
-            this.connected = true;
+            this.status.connected = true;
         });
     }
 
     nickname(nick: string) {
-        this.ircSocket.send(`NICK ${nick}`);
+        this._socketSend(`NICK ${nick}`);
     }
 
     user(username: string, realname: string) {
-        this.ircSocket.send(`USER ${username} 0 * ${realname}`);
+        this._socketSend(`USER ${username} 0 * ${realname}`);
     }
 
     join(channel: string) {
-        this.ircSocket.send(`JOIN ${channel}`);
+        this._socketSend(`JOIN ${channel}`);
 
         // add to channels
     }
 
     part(channel: string) {
-        this.ircSocket.send(`PART ${channel}`);
+        this._socketSend(`PART ${channel}`);
 
         // remove from channels
     }
 
     quit() {
-        this.ircSocket.send("QUIT");
+        this._socketSend("QUIT");
     }
 
     identify(username: string, password: string) {
-        this.ircSocket.send("PRIVMSG NickServ", `identify ${username} ${password}`);
+        this._socketSend("PRIVMSG NickServ", `identify ${username} ${password}`);
     }
 
     privmsg(message: string, target = this.target) {
-        this.ircSocket.send(`PRIVMSG ${target}`, message);
+        this._socketSend(`PRIVMSG ${target}`, message);
     }
 
     changeTarget() {

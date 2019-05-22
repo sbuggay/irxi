@@ -1,11 +1,11 @@
 import * as blessed from "blessed";
+import { IStatus } from "../../core/IRCClient";
 
 export class StatusBar {
 
     bar: blessed.Widgets.TextElement;
-    nickname: string;
-    server: string;
 
+    status: IStatus;
 
     // [nickname] [server] [notify]
     constructor() {
@@ -17,23 +17,20 @@ export class StatusBar {
             bg: "blue"
         });
 
-        this.nickname = "";
-        this.server = "";
+        this.status = {
+            connected: false,
+            nick: "",
+            host: ""
+        }
 
+    }
+
+    update(status: IStatus) {
+        this.status = status;
+        this.render();
     }
 
     render() {
-        this.bar.content = ` [${this.nickname}] [${this.server}]`
-    }
-
-    updateNickname(nickname: string) {
-        this.nickname = nickname;
-        this.render();
-    }
-
-
-    updateServer(server: string) {
-        this.server = server;
-        this.render();
+        this.bar.content = ` [${this.status.nick}] [${this.status.host}]`
     }
 }

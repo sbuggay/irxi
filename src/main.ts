@@ -1,5 +1,5 @@
 
-import { IRCClient } from "./core/IRCClient";
+import { IRCClient, MESSAGE, IEvent, STATUS_UPDATE, IStatus } from "./core/IRCClient";
 import { CommandHandler, isCommand, parseCommand } from "./core/CommandHandler";
 import { TerminalRenderer } from "./client/Terminal/TerminalRenderer";
 import { userInfo } from "os";
@@ -7,7 +7,7 @@ import { userInfo } from "os";
 const packageJson = require("../package.json");
 
 import * as commander from "commander";
-
+import { registerCommands } from "./core/Commands";
 
 commander
     .option("-s, --server <server>", "default server")
@@ -29,14 +29,13 @@ const ircClient = new IRCClient(nick);
 const renderer = new TerminalRenderer();
 const commandHandler = new CommandHandler();
 
-renderer.registerClient(ircClient);
+registerCommands(commandHandler, ircClient);
 
 if (commander.server) {
     ircClient.connect(commander.server).then(() => {
-        ircClient.nickname(ircClient.nick);
-        ircClient.user(ircClient.nick, "devan");
-        renderer.statusBar.updateNickname(ircClient.nick);
-        renderer.statusBar.updateServer(commander.server);
+        ircClient.nickname(nick);
+        ircClient.user(nick, "devan");
+        ircClient.emitStatus();
 
         // If there were specified channels to connect to, do them now.
         if (commander.channel) {
@@ -50,44 +49,15 @@ if (commander.server) {
     });
 }
 
-renderer.statusBar.updateNickname(nick);
+ircClient.on(MESSAGE, (message: IEvent) => {
+    renderer.log(message.text, message.channel);
+});
+
+ircClient.on(STATUS_UPDATE, (status: IStatus) => {
+    renderer.statusBar.update(status);
+});
 
 renderer.render();
-
-// Register client commands
-commandHandler.register("CONNECT", (params) => {
-
-    if (params.length < 1) {
-        renderer.log("not enough params");
-        return;
-    }
-
-    renderer.log(`connecting to ${params[0]}`);
-
-    // TODO: Disconnect from previous connection first
-    ircClient.connect(params[0]).then(() => {
-        ircClient.nickname(ircClient.nick);
-        ircClient.user(ircClient.nick, "devan");
-        renderer.statusBar.updateNickname(ircClient.nick);
-        renderer.statusBar.updateServer(params[0]);
-        renderer.screen.render();
-    });
-});
-
-commandHandler.register("JOIN", (params) => {
-    // TODO: Does join allow multiple channels?
-    if (params.length != 1) {
-        renderer.log("/JOIN not enough params");
-        return;
-    }
-
-    ircClient.join(params[0]);
-});
-
-commandHandler.register("QUIT", (params) => {
-    ircClient.quit();
-    setTimeout(() => process.exit(0), 500);
-});
 
 renderer.screen.key(["escape", "C-c"], () => {
     ircClient.quit();
@@ -107,7 +77,8 @@ renderer.onInput = (input: string) => {
         renderer.log(ret ? ret : "");
     }
     else {
-        renderer.log(`<${ircClient.nick}> ${input}`);
+        renderer.log(`<${ircClient.status.nick}> ${input}`);
+        // ircClient.submit(input);
     }
 
     renderer.input.clearValue();

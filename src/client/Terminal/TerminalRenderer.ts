@@ -2,10 +2,6 @@
 import * as blessed from "blessed";
 import { hourMinuteTimestamp } from "../../utility/time";
 import { StatusBar } from "./StatusBar";
-import { EReplies, getReplyName } from "../../core/EReplies";
-import { IMessage, IRCSocket } from "../../core/IRCSocket";
-import { IRCClient } from "../../core/IRCClient";
-
 
 const packageJson = require("../../../package.json");
 
@@ -101,7 +97,7 @@ export class TerminalRenderer {
 
         // If there is no where for it to go, parse the message and create a new log.
         if (!logElem) {
-            this.log(`creating noew log ${logElem}`);
+            this.log(`creating new log ${logElem}`);
         }
 
         if (!timestamp) {
@@ -110,47 +106,6 @@ export class TerminalRenderer {
         }
 
         this.currentLog().log(`${hourMinuteTimestamp(new Date())} ${message}`);
-    }
-
-    registerClient(ircClient: IRCClient) {
-        ircClient.on("message", (message: IMessage) => {
-
-            if (process.env.DEBUG) {
-                this.log(`{bold}{magenta-fg}DEBUG < ${message.full}{/}`);
-            }
-
-            const command = parseInt(message.command) as EReplies;
-            if (isNaN(command)) {
-                // If our command is not a number...
-                switch (message.command) {
-                    case "NOTICE":
-                        this.log(`=!= ${message.trailing}`);
-
-                        break;
-                    case "PRIVMSG":
-                        const from = message.prefix.split("!")[0];
-                        this.log(`<${from}> ${message.trailing}`);
-                        break;
-                    default:
-                        
-                        break;
-                }
-            }
-            else {
-                switch (command) {
-                    case EReplies.RPL_MOTDSTART:
-                    case EReplies.RPL_MOTD:
-                    case EReplies.RPL_ENDOFMOTD:
-                        this.log(`{green-fg}!{/} ${message.trailing}`);
-                        break;
-                    default:
-                        this.log(`${getReplyName(parseInt(message.command))} ${message.trailing}`);
-                        break;
-                }
-            }
-
-            this.render();
-        });
     }
 
     render() {
