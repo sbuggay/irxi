@@ -36,7 +36,7 @@ export class CommandHandler {
         key = key.toLowerCase();
 
         if (key == "help") {
-            return this.help();
+            return "Commands: 'help <command>' for usage\n" + this.help();
         }
 
         if (!this.commands[key]) {
