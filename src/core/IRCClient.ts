@@ -13,7 +13,6 @@ export interface IEvent {
     text: string;
     channel?: string; // Which channel to target?
     notice?: boolean; // Should it appear everywhere?
-
 }
 
 export interface IStatus {
@@ -59,7 +58,7 @@ export class IRCClient extends EventEmitter {
     // The client needs to handle some messages, channel join/quit etc
     handleMessage(message: IMessage) {
 
-        if (process.env.debug) {
+        if (process.env.DEBUG) {
             this.emitMessage(`{magenta-fg}DEBUG < ${message.full}{/}`);
         }
 
@@ -186,6 +185,14 @@ export class IRCClient extends EventEmitter {
 
     identify(username: string, password: string) {
         this._socketSend("PRIVMSG NickServ", `identify ${username} ${password}`);
+    }
+
+    time() {
+        this._socketSend("TIME");
+    }
+
+    version() {
+        this._socketSend("VERSION");
     }
 
     privmsg(message: string, target = this.status.target) {

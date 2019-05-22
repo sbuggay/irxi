@@ -1,6 +1,8 @@
 import { IRCClient } from "./IRCClient";
 import { CommandHandler } from "./CommandHandler";
 
+// https://en.wikipedia.org/wiki/List_of_Internet_Relay_Chat_commands
+
 export function registerCommands(commandHandler: CommandHandler, ircClient: IRCClient) {
     commandHandler.register("CONNECT", (params) => {
 
@@ -50,6 +52,14 @@ export function registerCommands(commandHandler: CommandHandler, ircClient: IRCC
 
     commandHandler.register("SEND", (params) => {
         ircClient._socketSend(params.join(" "));
+    });
+
+    commandHandler.register("TIME", () => {
+        ircClient.time();
+    });
+
+    commandHandler.register("VERSION", () => {
+        ircClient.version();
     });
     
     commandHandler.register("QUIT", (params) => {
