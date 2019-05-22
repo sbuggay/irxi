@@ -5,8 +5,6 @@ export class StatusBar {
 
     bar: blessed.Widgets.TextElement;
 
-    status: IStatus;
-
     // [nickname] [server] [notify]
     constructor() {
         this.bar = blessed.text({
@@ -17,20 +15,9 @@ export class StatusBar {
             bg: "blue"
         });
 
-        this.status = {
-            connected: false,
-            nick: "",
-            host: ""
-        }
-
     }
 
-    update(status: IStatus) {
-        this.status = status;
-        this.render();
-    }
-
-    render() {
-        this.bar.content = ` [${this.status.nick}] [${this.status.host}]`
+    render(status: IStatus) {
+        this.bar.content = ` [${status.nick}] [${status.host}] ->${status.target} [...]`
     }
 }

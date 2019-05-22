@@ -25,7 +25,7 @@ if (commander.debug) {
 const nick = commander.nick || userInfo().username;
 
 // Set up client, 
-const ircClient = new IRCClient(nick);
+const ircClient = new IRCClient();
 const renderer = new TerminalRenderer();
 const commandHandler = new CommandHandler();
 
@@ -54,7 +54,7 @@ ircClient.on(MESSAGE, (message: IEvent) => {
 });
 
 ircClient.on(STATUS_UPDATE, (status: IStatus) => {
-    renderer.statusBar.update(status);
+    renderer.statusBar.render(status);
 });
 
 renderer.render();

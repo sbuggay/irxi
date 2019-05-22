@@ -11,12 +11,14 @@ export interface IEvent {
     text: string;
     channel?: string; // Which channel to target?
     notice?: boolean; // Should it appear everywhere?
+
 }
 
 export interface IStatus {
     connected: boolean;
     host: string;
     nick: string;
+    target: string;
 }
 
 export interface IChannel {
@@ -30,27 +32,30 @@ export class IRCClient extends EventEmitter {
     ircSocket: IRCSocket;
     status: IStatus;
     channels: Channels;
-    target: string;
 
-    constructor(nick: string) {
+    constructor() {
         super();
         this.ircSocket = new IRCSocket();
 
         this.status = {
             connected: false,
             host: "",
-            nick: ""
+            nick: "",
+            target: DEFAULT_TARGET
         }
 
         this.channels = {};
-
-        this.target = DEFAULT_TARGET; // TODO: check if this is a valid channel name? I think not.
 
         this.ircSocket.on("message", this.handleMessage.bind(this));
     }
 
     // The client needs to handle some messages, channel join/quit etc
     handleMessage(message: IMessage) {
+
+        if (process.env.debug) {
+            this.emitMessage(`{magenta-fg}DEBUG < ${message.full}{/}`);
+        }
+
         const parsedCommand = parseInt(message.command);
         if (isNaN(parsedCommand)) {
             // If our command is not a number...
@@ -70,7 +75,11 @@ export class IRCClient extends EventEmitter {
                     break;
                 case "MODE":
                     break;
+                case "PING":
+                    this._socketSend(`PONG ${message.params[0]}`);
+                    break;
                 default:
+
                     break;
             }
         }
@@ -110,13 +119,18 @@ export class IRCClient extends EventEmitter {
     // Try to send a message to the active channel/user
     connect(host: string, port = 6667) {
         this.status.host = host;
+        this.emitStatus()
         return this.ircSocket.connect(host, port).then(() => {
             this.status.connected = true;
+            this.emitStatus();
         });
     }
 
     nickname(nick: string) {
+        this.status.nick = nick;
+
         this._socketSend(`NICK ${nick}`);
+        this.emitStatus()
     }
 
     user(username: string, realname: string) {
@@ -126,7 +140,9 @@ export class IRCClient extends EventEmitter {
     join(channel: string) {
         this._socketSend(`JOIN ${channel}`);
 
-        // add to channels
+        // add to channels and change target
+        this.status.target = channel;
+        this.emitStatus();
     }
 
     part(channel: string) {
@@ -143,11 +159,8 @@ export class IRCClient extends EventEmitter {
         this._socketSend("PRIVMSG NickServ", `identify ${username} ${password}`);
     }
 
-    privmsg(message: string, target = this.target) {
+    privmsg(message: string, target = this.status.target) {
         this._socketSend(`PRIVMSG ${target}`, message);
     }
 
-    changeTarget() {
-
-    }
 }

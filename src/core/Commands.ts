@@ -28,6 +28,25 @@ export function registerCommands(commandHandler: CommandHandler, ircClient: IRCC
     
         ircClient.join(params[0]);
     });
+
+    commandHandler.register("PART", (params) => {
+        // TODO: Does join allow multiple channels?
+        if (params.length != 1) {
+            ircClient.emitMessage("/JOIN not enough params");
+            return;
+        }
+    
+        ircClient.join(params[0]);
+    });
+
+    commandHandler.register("CH", (params) => {
+        // TODO: Does join allow multiple channels?
+        if (params.length != 1) {
+            
+        }
+    
+        ircClient.join(params[0]);
+    });
     
     commandHandler.register("QUIT", (params) => {
         ircClient.quit();

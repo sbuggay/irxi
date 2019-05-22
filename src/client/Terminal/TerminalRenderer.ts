@@ -2,6 +2,7 @@
 import * as blessed from "blessed";
 import { hourMinuteTimestamp } from "../../utility/time";
 import { StatusBar } from "./StatusBar";
+import { IStatus } from "../../core/IRCClient";
 
 const packageJson = require("../../../package.json");
 
