@@ -28,8 +28,17 @@ export class CommandHandler {
         this.commands = {};
     }
 
+    help() {
+        return Object.keys(this.commands).join("\t");
+    }
+
     call(key: string, params: string[]) {
         key = key.toLowerCase();
+
+        if (key == "help") {
+            return this.help();
+        }
+
         if (!this.commands[key]) {
             return "No Command " + key;
         }
