@@ -140,7 +140,7 @@ export class IRCClient extends EventEmitter {
         if (process.env.DEBUG) {
             this.emitMessage(`{magenta-fg}DEBUG > ${message} ${params}{/}`);
         }
-        
+
         this.ircSocket.send(message, params);
     }
 
@@ -179,6 +179,18 @@ export class IRCClient extends EventEmitter {
         // remove from channels
     }
 
+    mode(...params: string[]) {
+        this._socketSend(`MODE ${params.join(" ")}`)
+    }
+
+    motd() {
+        this._socketSend("MOTD");
+    }
+
+    names(channels?: string) {
+        this._socketSend(`NAMES ${channels ? channels.split(",").join(" ") : ""}`);
+    }
+
     quit() {
         this._socketSend("QUIT");
     }
@@ -187,8 +199,17 @@ export class IRCClient extends EventEmitter {
         this._socketSend("PRIVMSG NickServ", `identify ${username} ${password}`);
     }
 
+    /**
+     * Returns the local time on the current server, or <server> if specified. Defined in RFC 1459.
+     *
+     * @memberof IRCClient
+     */
     time() {
         this._socketSend("TIME");
+    }
+
+    topic(channel: string, topic?: string) {
+        this._socketSend(`TOPIC`)
     }
 
     version() {
