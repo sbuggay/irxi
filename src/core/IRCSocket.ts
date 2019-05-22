@@ -21,8 +21,6 @@ export class IRCSocket extends EventEmitter {
         // this.socket.on("ready", this.ready.bind(this));
         this.socket.on("data", this.processData.bind(this));
         this.socket.on("close", () => { });
-
-        this.on("message", this.handleMessage.bind(this));
     }
 
     processData(data: string) {
@@ -36,17 +34,6 @@ export class IRCSocket extends EventEmitter {
                 this.emit("message", message);
             }
         });
-    }
-
-    // Low level socket message handling for PING etc.
-    handleMessage(message: IMessage) {
-        // Special case for PING respond with PONG to stay connected
-        // Should this be optional?
-        switch (message.command) {
-            case "PING":
-                this.send(`PONG ${message.params[0]}`);
-                break;
-        }
     }
 
     send(cmd: string, trailing: string = "") {
