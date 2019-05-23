@@ -2,7 +2,6 @@ import { IRCClient } from "./IRCClient";
 import { CommandHandler } from "./CommandHandler";
 
 // https://en.wikipedia.org/wiki/List_of_Internet_Relay_Chat_commands
-
 export function registerCommands(commandHandler: CommandHandler, ircClient: IRCClient) {
     commandHandler.register("CONNECT", (params) => {
         ircClient.emitMessage(`connecting to ${params[0]}`);
@@ -19,9 +18,19 @@ export function registerCommands(commandHandler: CommandHandler, ircClient: IRCC
         ircClient.join(params[0]);
     }, "JOIN <channel>, joins the channel", 1);
 
+    commandHandler.register("MSG", (params) => {
+        ircClient.privmsg(params[0], params.slice(1).join(" "));
+    }, "MSG <target> <message>, message the target");
+
+    commandHandler.alias("PRIVMSG", "MSG");
+
     commandHandler.register("NAMES", (params) => {
         ircClient.names(params.join(","));
     }, "NAMES [<channel>]");
+
+    commandHandler.register("NICK", (params) => {
+        ircClient.names(params.join(","));
+    }, "NICK <nickname>", 1);
 
     commandHandler.register("PART", (params) => {
         ircClient.part(params[0]);

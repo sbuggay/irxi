@@ -3,6 +3,7 @@ import { EventEmitter } from "events";
 import { EReplies, getReplyName } from "./EReplies";
 import { isCommand, parseCommand, CommandHandler } from "./CommandHandler";
 import { registerCommands } from "./Commands";
+import { isCTCPMessage } from "./CTCP";
 
 const packageJson = require("../../package.json");
 
@@ -79,11 +80,10 @@ export class IRCClient extends EventEmitter {
                 case "PRIVMSG":
                     // Check if CTCP?
                     const from = message.prefix.split("!")[0];
-                    if (message.trailing.codePointAt(0) === 0x01) {
+                    if (isCTCPMessage(message)) {
                         this.emitMessage(`CTCP ${message.trailing} from ${from}`, from);
                     }
                     else {
-                        
                         this.emitMessage(`<${from}> ${message.trailing}`, from);
                     }
 
@@ -190,12 +190,15 @@ export class IRCClient extends EventEmitter {
     nickname(nick: string) {
         this.status.nick = nick;
 
-        this._socketSend(`NICK ${nick}`);
-        this.emitStatus()
+        if (this.status.connected) {
+            this._socketSend(`NICK ${nick}`);
+        }
     }
 
     user(username: string, realname: string) {
-        this._socketSend(`USER ${username} 0 * ${realname}`);
+        if (this.status.connected) {
+            this._socketSend(`USER ${username} 0 * ${realname}`);
+        }
     }
 
     join(channel: string) {

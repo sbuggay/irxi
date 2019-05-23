@@ -28,20 +28,13 @@ const nick = commander.nick || userInfo().username;
 const ircClient = new IRCClient();
 const renderer = new TerminalRenderer();
 
+ircClient.nickname(nick);
+ircClient.user(nick, nick);
+
+ircClient.emitStatus();
+
 if (commander.server) {
     ircClient.connect(commander.server).then(() => {
-        ircClient.nickname(nick);
-        ircClient.user(nick, "devan");
-        ircClient.emitStatus();
-
-        // If there were specified channels to connect to, do them now.
-        if (commander.channel) {
-            const channels: string[] = commander.channel.split(",");
-            channels.forEach(ch => {
-                ircClient.join(ch);
-            });
-        }
-
         renderer.screen.render();
     });
 }
