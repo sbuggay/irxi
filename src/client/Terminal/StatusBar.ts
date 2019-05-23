@@ -17,6 +17,8 @@ export class StatusBar {
 
     }
 
+
+
     render(status: IStatus) {
         this.bar.content = ` [${status.nick}] [${status.host}] ->${status.target} [...]`
     }

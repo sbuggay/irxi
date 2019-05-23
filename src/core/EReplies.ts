@@ -7,6 +7,7 @@ export function getReplyName(enumMember: number) {
 }
  
 export enum EReplies {
+    RPL_ISUPPORT =          5,
     RPL_NONE =              300,
     RPL_USERHOST =          302,
     RPL_ISON =              303,

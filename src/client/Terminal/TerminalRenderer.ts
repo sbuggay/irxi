@@ -85,6 +85,24 @@ export class TerminalRenderer {
         });
     }
 
+    createLog(log: string, newTarget?: boolean) {
+        if (this.messageLogs[log]) {
+            this.log(`${log} already created`);
+            return;
+        }
+
+        this.messageLogs[log] = blessed.log(messageLogOptions);
+
+        if (newTarget) {
+            // Remove active log
+            this.screen.remove(this.currentLog());
+
+            // Add new target
+            this.changeLog(log);
+            this.screen.append(this.currentLog());
+        }
+    }
+
     changeLog(log: string = DEFAULT_LOG) {
         this.activeLog = log;
     }

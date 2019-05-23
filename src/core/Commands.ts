@@ -5,64 +5,36 @@ import { CommandHandler } from "./CommandHandler";
 
 export function registerCommands(commandHandler: CommandHandler, ircClient: IRCClient) {
     commandHandler.register("CONNECT", (params) => {
-
-        if (params.length < 1) {
-            ircClient.emitMessage("not enough params");
-            return;
-        }
-    
         ircClient.emitMessage(`connecting to ${params[0]}`);
-    
+
         // TODO: Disconnect from previous connection first
         ircClient.connect(params[0]).then(() => {
             ircClient.nickname(ircClient.status.nick);
             ircClient.user(ircClient.status.nick, "devan");
             ircClient.emitStatus();
         });
-    });
-    
+    }, "CONNECT <server>, joins the server", 1);
+
     commandHandler.register("JOIN", (params) => {
-        if (params.length != 1) {
-            ircClient.emitMessage("/JOIN not enough params");
-            return;
-        }
-    
         ircClient.join(params[0]);
-    });
+    }, "JOIN <channel>, joins the channel", 1);
+
+    commandHandler.register("NAMES", (params) => {
+        ircClient.names(params.join(","));
+    }, "NAMES [<channel>]");
 
     commandHandler.register("PART", (params) => {
-        if (params.length != 1) {
-            ircClient.emitMessage("/JOIN not enough params");
-            return;
-        }
-    
         ircClient.part(params[0]);
-    });
-
-    commandHandler.register("CH", (params) => {
-        if (params.length != 1) {
-            
-        }
-    
-        ircClient.join(params[0]);
-    });
+    }, "PART [<channel>], Leave the channel, or current channel if not specified");
 
     commandHandler.register("SEND", (params) => {
         ircClient._socketSend(params.join(" "));
-    });
+    }, "SEND <params>, send raw params to server");
 
-    commandHandler.register("TIME", () => {
-        ircClient.time();
-    });
-
-    commandHandler.register("VERSION", () => {
-        ircClient.version();
-    });
-    
-    commandHandler.register("QUIT", (params) => {
+    commandHandler.register("QUIT", () => {
         ircClient.quit();
         setTimeout(() => process.exit(0), 500);
-    });
+    }, "QUIT, quit the server", 0);
 }
 
 // Register client commands
