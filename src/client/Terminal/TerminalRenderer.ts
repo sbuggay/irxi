@@ -4,6 +4,8 @@ import { hourMinuteTimestamp } from "../../utility/time";
 import { StatusBar } from "./StatusBar";
 import { IStatus } from "../../core/IRCClient";
 
+import * as figlet from "figlet";
+
 const packageJson = require("../../../package.json");
 
 export const DEFAULT_LOG = "DEFAULT_LOG";
@@ -66,7 +68,10 @@ export class TerminalRenderer {
         this.statusBar = new StatusBar();
         this.input = blessed.textbox(inputOptions);
 
-        this.banner.content = ` ${packageJson.name}@${packageJson.version}`
+        this.banner.content = ` ${packageJson.name} v${packageJson.version}`
+
+        const figletTitle = figlet.textSync(` ${packageJson.name} v${packageJson.version}`);
+        this.messageLogs[this.activeLog].setContent(figletTitle);
 
         this.onInput = () => { };
 
