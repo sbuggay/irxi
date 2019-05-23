@@ -9,8 +9,20 @@ irxi is a full IRC client in TypeScript. The core client is written from the gro
 - JOIN/PART channels
 - PRIVMSG
 
+Basic [CTCP](https://tools.ietf.org/id/draft-oakley-irc-ctcp-01.html#rfc.appendix.A) support:
+- ACTION
+- CLIENTINFO
+- DCC
+- FINGER
+- PING
+- SOURCE
+- TIME
+- VERSION
+- USERINFO
+
 ## Reference
 
 https://tools.ietf.org/html/rfc1459
+https://tools.ietf.org/id/draft-oakley-irc-ctcp-01.html#rfc.appendix.A
 https://modern.ircdocs.horse/
 https://ircv3.net/index.html

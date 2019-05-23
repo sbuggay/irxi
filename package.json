@@ -17,8 +17,10 @@
     "typescript": "^3.4.4"
   },
   "dependencies": {
+    "@types/figlet": "^1.2.0",
     "blessed": "^0.1.81",
     "commander": "^2.20.0",
+    "figlet": "^1.2.1",
     "prompt": "^1.0.0"
   }
 }

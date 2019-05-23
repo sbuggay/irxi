@@ -4,6 +4,9 @@ import { EReplies, getReplyName } from "./EReplies";
 import { isCommand, parseCommand, CommandHandler } from "./CommandHandler";
 import { registerCommands } from "./Commands";
 
+const packageJson = require("../../package.json");
+
+const VERSION_STRING = `${packageJson.name} v${packageJson.version}`;
 
 export const MESSAGE = Symbol("MESSAGE");
 export const STATUS_UPDATE = Symbol("STATUS_UPDATE");
@@ -35,6 +38,9 @@ export class IRCClient extends EventEmitter {
     channels: Channels;
     commandHandler: CommandHandler;
 
+    // Buffer for RPL_NAMREPLY and presenting it nicely
+    nameBuffer: string[];
+
     constructor() {
         super();
         this.ircSocket = new IRCSocket();
@@ -51,6 +57,7 @@ export class IRCClient extends EventEmitter {
         registerCommands(this.commandHandler, this);
 
         this.channels = {};
+        this.nameBuffer = [];
 
         this.ircSocket.on("message", this.handleMessage.bind(this));
     }
@@ -59,7 +66,7 @@ export class IRCClient extends EventEmitter {
     handleMessage(message: IMessage) {
 
         if (process.env.DEBUG) {
-            this.emitMessage(`{magenta-fg}DEBUG < ${message.full}{/}`);
+            this.emitMessage(`{magenta-fg}DEBUG < "${message.full}"{/}`);
         }
 
         const parsedCommand = parseInt(message.command);
@@ -70,19 +77,35 @@ export class IRCClient extends EventEmitter {
                     this.emitMessage(`{yellow-fg}{bold}!!!{/} ${message.trailing}`);
                     break;
                 case "PRIVMSG":
+                    // Check if CTCP?
                     const from = message.prefix.split("!")[0];
-                    this.emitMessage(`<${from}> ${message.trailing}`);
+                    if (message.trailing.codePointAt(0) === 0x01) {
+                        this.emitMessage(`CTCP ${message.trailing} from ${from}`, from);
+                    }
+                    else {
+                        
+                        this.emitMessage(`<${from}> ${message.trailing}`, from);
+                    }
+
                     break;
                 case "JOIN":
+                    this.emitMessage(`[${message.prefix}] joined`);
                     break;
                 case "QUIT":
+                    this.emitMessage(`[${message.prefix}] quit: ${message.trailing}`);
                     break;
                 case "PART":
+                    this.emitMessage(`[${message.prefix}] parted: ${message.trailing}`);
                     break;
                 case "MODE":
+                    // TODO: Mode stuff
                     break;
                 case "PING":
                     this._socketSend(`PONG ${message.params[0]}`);
+                    break;
+                case "VERSION":
+                    this.emitMessage(`Received a CTCP VERSION from ${message.trailing}`)
+                    this._socketSend(`VERSION ${VERSION_STRING}`);
                     break;
                 default:
 
@@ -95,6 +118,16 @@ export class IRCClient extends EventEmitter {
                 case EReplies.RPL_MOTD:
                 case EReplies.RPL_ENDOFMOTD:
                     this.emitMessage(`{green-fg}!{/} ${message.trailing}`);
+                    break;
+
+                case EReplies.RPL_NAMREPLY:
+                    // Fill our buffer
+                    this.nameBuffer.push(...message.trailing.split(" "));
+                    break;
+                case EReplies.RPL_ENDOFNAMES:
+                    const nameResponse = this.nameBuffer.join("\t\t");
+                    this.nameBuffer = [];
+                    this.emitMessage(`NAMES:\n[${nameResponse}]`);
                     break;
                 default:
                     this.emitMessage(`${getReplyName(parsedCommand)} ${message.trailing}`);
@@ -138,7 +171,7 @@ export class IRCClient extends EventEmitter {
     _socketSend(message: string, params?: string) {
 
         if (process.env.DEBUG) {
-            this.emitMessage(`{magenta-fg}DEBUG > ${message} ${params}{/}`);
+            this.emitMessage(`{magenta-fg}DEBUG > ${message} ${params ? params : ""}{/}`);
         }
 
         this.ircSocket.send(message, params);
