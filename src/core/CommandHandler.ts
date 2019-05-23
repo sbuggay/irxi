@@ -86,6 +86,14 @@ export class CommandHandler {
         };
     }
 
+    alias(alias: string, key: string) {
+        if (!this.commands[key.toLowerCase()]) {
+            return;
+        }
+
+        this.commands[alias.toLowerCase()] = this.commands[key.toLowerCase()]
+    }
+
     deregister(key: string) {
         delete this.commands[key.toLowerCase()];
     }
